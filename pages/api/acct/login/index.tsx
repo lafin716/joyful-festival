@@ -16,8 +16,8 @@ function runMiddleware(
   fn: (
     req: NextApiRequest,
     res: NextApiResponse,
-    callback: (result: unknown) => void
-  ) => void
+    callback: (result: unknown) => void,
+  ) => void,
 ) {
   return new Promise((resolve, reject) => {
     fn(req, res, (result: unknown) => {
@@ -74,19 +74,17 @@ export default async function handler(
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-          }
-        }
+          },
+        },
       );
       res.status(200).json(response.data);
     } catch (error: unknown) {
       if (error instanceof AxiosError) {
         console.error("Login error:", error.response?.data);
-        res
-          .status(error.response?.status || 500)
-          .json({ 
-            message: error.response?.data?.message || "Error fetching data",
-            error: error.response?.data 
-          });
+        res.status(error.response?.status || 500).json({
+          message: error.response?.data?.message || "Error fetching data",
+          error: error.response?.data,
+        });
       } else {
         res.status(500).json({ message: "Unknown error occurred" });
       }
