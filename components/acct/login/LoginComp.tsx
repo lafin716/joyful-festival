@@ -47,37 +47,38 @@ const LoginComp = () => {
 
   // 회원가입 버튼 클릭 -> 회원가입 로직 실행
   const loginBtn = async () => {
-    // 정홥성 확인이 완료되면 '회원가입'로직 실행
     if (validationCheck()) {
       const data = {
         email: emailInput,
         password: passwordInput,
       };
-      axios
-        .post("/api/acct/login", data)
-        .then((response) => {
-          console.log("login 결과");
-          console.log(response.data);
-          if (response.data.code === 200) {
-            // getNewPingList(response);
-            const loginData = response.data.data;
-            dispatch(
-              loginAction.login({
-                userEmail: emailInput,
-                userName: loginData.userName,
-                accessToken: loginData.accessToken,
-                refreshToken: loginData.refreshToken,
-              }),
-            );
-            dispatch(alertAction.openModal({ cont: response.data.message }));
-            router.push("/");
-          } else {
-            dispatch(alertAction.openModal({ cont: response.data.message }));
+      try {
+        const response = await axios.post("/api/acct/login", data, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
-        })
-        .catch((error) => {
-          console.error(error);
         });
+        
+        if (response.data.code === 200) {
+          const loginData = response.data.data;
+          dispatch(
+            loginAction.login({
+              userEmail: emailInput,
+              userName: loginData.userName,
+              accessToken: loginData.accessToken,
+              refreshToken: loginData.refreshToken,
+            })
+          );
+          dispatch(alertAction.openModal({ cont: response.data.message }));
+          router.push("/");
+        } else {
+          dispatch(alertAction.openModal({ cont: response.data.message }));
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        dispatch(alertAction.openModal({ cont: "로그인 중 오류가 발생했습니다." }));
+      }
     }
   };
 

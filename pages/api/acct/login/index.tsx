@@ -1,10 +1,39 @@
 import axios, { AxiosError } from "axios";
 import { NextApiRequest, NextApiResponse } from "next";
+import Cors from 'cors';
+
+// CORS 미들웨어 초기화
+const cors = Cors({
+  methods: ['POST', 'GET', 'HEAD', 'OPTIONS'],
+  credentials: true,
+  origin: '*'
+});
+
+// CORS 미들웨어를 실행하기 위한 헬퍼 함수
+function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: Function) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result: any) => {
+      if (result instanceof Error) {
+        return reject(result);
+      }
+      return resolve(result);
+    });
+  });
+}
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  // CORS 미들웨어 실행
+  await runMiddleware(req, res, cors);
+
+  // OPTIONS 요청에 대한 처리
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method === "GET") {
     // get 통신 parameter 세팅
     let getParamSetting = "?";
@@ -30,25 +59,33 @@ export default async function handler(
       }
     }
   } else if (req.method === "POST") {
-    console.log(req.body);
     try {
       const response = await axios.post(
         `http://ec2-3-34-40-99.ap-northeast-2.compute.amazonaws.com/auth/signin`,
         req.body,
-        { headers: req.headers },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          }
+        }
       );
       res.status(200).json(response.data);
     } catch (error: unknown) {
       if (error instanceof AxiosError) {
+        console.error('Login error:', error.response?.data);
         res
           .status(error.response?.status || 500)
-          .json({ message: "Error fetching data" });
+          .json({ 
+            message: error.response?.data?.message || "Error fetching data",
+            error: error.response?.data 
+          });
       } else {
         res.status(500).json({ message: "Unknown error occurred" });
       }
     }
   } else {
-    res.setHeader("Allow", ["GET"]);
+    res.setHeader("Allow", ["GET", "POST", "OPTIONS"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
