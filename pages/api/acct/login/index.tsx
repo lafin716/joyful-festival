@@ -1,18 +1,26 @@
 import axios, { AxiosError } from "axios";
 import { NextApiRequest, NextApiResponse } from "next";
-import Cors from 'cors';
+import Cors from "cors";
 
 // CORS 미들웨어 초기화
 const cors = Cors({
-  methods: ['POST', 'GET', 'HEAD', 'OPTIONS'],
+  methods: ["POST", "GET", "HEAD", "OPTIONS"],
   credentials: true,
-  origin: '*'
+  origin: "*",
 });
 
 // CORS 미들웨어를 실행하기 위한 헬퍼 함수
-function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: Function) {
+function runMiddleware(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  fn: (
+    req: NextApiRequest,
+    res: NextApiResponse,
+    callback: (result: unknown) => void
+  ) => void
+) {
   return new Promise((resolve, reject) => {
-    fn(req, res, (result: any) => {
+    fn(req, res, (result: unknown) => {
       if (result instanceof Error) {
         return reject(result);
       }
@@ -29,7 +37,7 @@ export default async function handler(
   await runMiddleware(req, res, cors);
 
   // OPTIONS 요청에 대한 처리
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.status(200).end();
     return;
   }
@@ -42,7 +50,6 @@ export default async function handler(
       getParamSetting += q[0] + "=" + q[1] + "&";
     }
     getParamSetting = getParamSetting.slice(0, -1);
-    //`${BASE_URL}${url}${getParamSetting}`
     try {
       const response = await axios.get(
         `http://ec2-3-34-40-99.ap-northeast-2.compute.amazonaws.com/festivals${getParamSetting}`,
@@ -65,15 +72,15 @@ export default async function handler(
         req.body,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            "Content-Type": "application/json",
+            Accept: "application/json",
           }
         }
       );
       res.status(200).json(response.data);
     } catch (error: unknown) {
       if (error instanceof AxiosError) {
-        console.error('Login error:', error.response?.data);
+        console.error("Login error:", error.response?.data);
         res
           .status(error.response?.status || 500)
           .json({ 
